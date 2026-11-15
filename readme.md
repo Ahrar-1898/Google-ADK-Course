@@ -1,82 +1,22 @@
-# Google ADK — Quick Revision Notes
+# Google ADK Course
 
-Short notes for understanding the examples in this repository and explaining them in an interview.
+Hands-on examples for learning Google's Agent Development Kit (ADK), from a basic agent to agents that use tools and external services.
 
-> **Scope:** ADK introduction, the first agent, and built-in/third-party tools. Function tools will be documented after that lesson is complete.
+## Learning path
 
-## 1. What is Google ADK?
-
-**Google Agent Development Kit (ADK)** is a framework for building and running AI agents. An agent combines:
-
-- **Model** — generates and reasons about responses.
-- **Instructions** — tell the agent how to behave.
-- **Tools (optional)** — let it search, run code, or use other services.
-
-ADK connects these parts and manages the tool-call flow. Use it to move from a simple chat agent to agents that can take useful actions.
-
-**Simple flow:** User asks → model decides whether a tool is needed → ADK runs the tool → model responds with the result.
-
-## 2. Models used in this repository
-
-| Model choice | When to use |
-|---|---|
-| **Gemini 3.5 Flash** | Preferred for better results, if this model ID is available for your Google account and ADK setup. |
-| **Gemini 2.5 Flash** | Used in the Google Search and code-execution examples; a lower-cost option, but responses may be less capable. |
-| **Groq model** | The first agent uses `groq/openai/gpt-oss-120b` through LiteLLM. Useful for free-tier/low-cost practice when available; quality and quotas can vary. |
-
-Model names and free-tier access can change. Confirm the current model ID and provider limits before relying on them. The code currently runs **Gemini 2.5 Flash** in two examples; the first agent uses **Groq**.
-
-## 3. First ADK agent
-
-File: [`First-ADK_Agent/personal_bot/agent.py`](First-ADK_Agent/personal_bot/agent.py)
-
-```python
-root_agent = Agent(
-    model=LiteLlm(model="groq/openai/gpt-oss-120b"),
-    name="root_agent",
-    description="A helpful assistant for user questions.",
-    instruction="Answer user questions to the best of your knowledge.",
-)
-```
-
-- `model`: language model used by the agent.
-- `name`: agent's programmatic name.
-- `description`: short summary of the agent's purpose.
-- `instruction`: guidance for the agent's responses.
-- `root_agent`: entry-point variable discovered by ADK.
-
-This is a basic conversational agent. It has **no tools**, so it cannot search the web or execute code through an ADK tool.
-
-## 4. Built-in and third-party tools
-
-A **tool** gives an agent a capability beyond generating text. The model chooses when to call an available tool; ADK (or an adapter) runs it and returns its result.
-
-### Built-in examples
-
-- **Google Search** — [`google_agent/agent.py`](Built-in%20%26%20Third-party_Tools/google_agent/agent.py) registers ADK's `google_search` tool to find current information. Uses `gemini-2.5-flash`.
-- **Code execution** — [`code_execution_agent/agent.py`](Built-in%20%26%20Third-party_Tools/code_execution_agent/agent.py) configures ADK's `BuiltInCodeExecutor` for calculations and data analysis. Uses `gemini-2.5-flash`.
-
-**Safety:** Model-generated code is untrusted. Run it in an appropriately restricted environment and protect credentials, files, and network access.
-
-### Third-party example: Tavily Search
-
-File: [`tavily_search_tool/agent.py`](Built-in%20%26%20Third-party_Tools/tavily_search_tool/agent.py)
-
-1. `TavilySearch` creates the external search tool.
-2. ADK's `LangchainTool` adapter wraps it.
-3. The wrapper is added to the agent's `tools` list.
-
-Unlike ADK's Google Search tool, Tavily is an external service and needs its own package and API credential.
-
-| | Built-in | Third-party |
+| Step | Example | What it covers |
 |---|---|---|
-| Example | Google Search, code executor | Tavily Search |
-| Provided by | ADK integration | External provider/library |
-| Consider | Model compatibility and provider setup | Extra dependency, credentials, cost, and service limits |
+| 1 | `First-ADK_Agent/personal_bot` | A basic conversational agent |
+| 2 | `Built-in & Third-party_Tools` | Google Search, code execution, and Tavily Search |
+| 3 | `Function_Tools/world_clock_agent` | A custom Python function tool |
+| 4 | `combined_tool_agent` | Combining built-in, third-party, and function tools |
+| 5 | `course_refund_agent` | A tool-using agent with a sample refund workflow |
+| 6 | `mcp_agent` | Connecting an agent to MCP servers |
+| 7 | `coding_agent` | A coding agent with workspace tools |
 
-## 5. Run the examples
+## Setup
 
-`requirements.txt` lists the packages used by the examples. Create and activate a virtual environment, then install them:
+From the repository root, create a virtual environment and install the main dependencies:
 
 ```powershell
 python -m venv .venv
@@ -84,29 +24,49 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-Set the required provider credentials securely in your environment: Groq for the first agent, Google/Gemini for the Gemini examples, and Tavily for the Tavily example. **Never commit API keys.**
+Set the credentials needed by the example you want to run. For example:
 
-Run from the parent directory of the agent package:
+```powershell
+$env:GOOGLE_API_KEY = "your-google-api-key"
+$env:GROQ_API_KEY = "your-groq-api-key"
+$env:TAVILY_API_KEY = "your-tavily-api-key"
+$env:GITHUB_TOKEN = "your-github-token" # mcp_agent
+$env:GITHUB_PAT = "your-github-token"   # coding_agent (optional)
+```
+
+MCP examples use Node.js/npm to run their servers. Set only the credentials required by the agent you run; never commit API keys or tokens.
+
+## Run an agent
+
+Run ADK from the directory containing the agent package:
 
 ```powershell
 Set-Location .\First-ADK_Agent
 adk run personal_bot
-
-Set-Location "..\Built-in & Third-party_Tools"
-adk run google_agent
 ```
 
-Replace `google_agent` with `code_execution_agent` or `tavily_search_tool` to run those examples. Use `adk web` from the same directory to open the local development UI.
+For the other examples, use the corresponding directory and agent name:
 
-## 6. Interview revision
+| Directory | Agent |
+|---|---|
+| `Built-in & Third-party_Tools` | `google_agent`, `code_execution_agent`, or `tavily_search_tool` |
+| `Function_Tools` | `world_clock_agent` |
+| Repository root | `combined_tool_agent`, `course_refund_agent`, `mcp_agent`, or `coding_agent` |
 
-**What is ADK?**
-ADK is a framework for building AI agents from a model, instructions, and optional tools. It manages how an agent uses its tools and returns a response.
+For example, from the repository root:
 
-**What does the first agent do?**
-It uses a Groq-hosted model through LiteLLM and answers user questions using its instruction. It has no search or code-execution tools.
+```powershell
+adk run combined_tool_agent
+```
 
-**Built-in vs. third-party tools?**
-Built-in tools are provided through ADK integrations, such as Google Search. Third-party tools come from external providers; this project connects Tavily to ADK using a LangChain adapter.
+To open ADK's local development UI, run `adk web` from the same directory you would use for `adk run`. The refund example also needs its sample database initialized once:
 
-**Quick recall:** Google Search = current web information · Code executor = calculations/data work · Tavily = external search service.
+```powershell
+python -m course_refund_agent.setup_database
+```
+
+For agent-specific setup, see its README where available or inspect its requirements and configuration.
+
+## Updating this README
+
+Keep this page as the course overview. When a new lesson or agent is completed, add its row to the end of the learning path and update the run instructions if needed—preserve the existing sections rather than rewriting the README.
